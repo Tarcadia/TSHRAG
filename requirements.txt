@@ -1,0 +1,11 @@
+
+# Functional:
+portalocker
+tqdm
+
+# Interface:
+click
+flask
+
+# Deployment:
+pyinstaller
