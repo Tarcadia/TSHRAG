@@ -6,43 +6,39 @@ from enum import Enum
 from dataclasses import dataclass, field
 from typing import Any
 
+from .id import Id
 from .time import Time
 
 
 
-class MetricType(str, Enum):
-    LOG             = "LOG"
-    DATA            = "DATA"
+class MetricId(str):
+
+    SEPARATOR = "::"
+
+    def __new__(cls, *keys):
+        _keys = [Id(k) for k in keys]
+        return str.__new__(cls, cls.SEPARATOR.join(_keys))
+    
+    def keys(self):
+        return self.split(self.SEPARATOR)
 
 
 
 @dataclass
 class Metric:
-    id              : str
-    type            : MetricType
+    id              : MetricId
+    type            : str                   = ""
     description     : str                   = ""
 
     def __post_init__(self):
-        self.id = self.id.lower()
-        if isinstance(self.type, str):
-            self.type = MetricType(self.type.upper())
+        self.id = MetricId(self.id)
 
 
 @dataclass
 class MetricEntry:
     time            : Time                  = field(default_factory=Time)
+    value           : Any                   = None
 
     def __post_init__(self):
         self.time = Time(self.time)
-
-
-@dataclass
-class MetricDataEntry(MetricEntry):
-    value           : Any                   = None
-
-
-@dataclass
-class MetricLogEntry(MetricEntry):
-    value           : str                   = ""
-    unit            : str                   = ""
 

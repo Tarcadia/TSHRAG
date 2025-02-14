@@ -5,14 +5,21 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+from ..data import Id
+
 from .load import Load
 from .run import Run
 
 
 
+class JobId(Id):
+    pass
+
+
+
 @dataclass
 class Job(Run):
-    id              : str
+    id              : JobId
     test_id         : str
     load            : Load
     env             : Dict[str, str]        = field(default_factory=dict)
@@ -22,4 +29,6 @@ class Job(Run):
 
     def __post_init__(self):
         super().__post_init__()
-        self.id = self.id.lower()
+        self.id = JobId(self.id)
+        if isinstance(self.load, dict):
+            self.load = Load(**self.load)

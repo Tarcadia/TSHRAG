@@ -5,20 +5,27 @@
 from dataclasses import dataclass, field
 from typing import Dict, List
 
+from ..data import Id
+
 from .run import Run
 from .job import Job
 
 
 
+class TestId(Id):
+    pass
+
+
+
 @dataclass
 class Test(Run):
-    id              : str
+    id              : TestId
     dut             : Dict[str, str]        = field(default_factory=dict)
     jobs            : List[Job]             = field(default_factory=list)
 
     def __post_init__(self):
         super().__post_init__()
-        self.id = self.id.lower()
+        self.id = TestId(self.id)
         if isinstance(self.jobs, list):
             self.jobs = [
                 Job(**job) if isinstance(job, dict) else job
