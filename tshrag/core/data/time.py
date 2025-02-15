@@ -8,14 +8,16 @@ _DATETIME_FORMAT = "%Y%m%d%H%M%S%f"
 
 
 class Time(datetime):
-    def __new__(cls, time: datetime | str | int | None = None):
+    def __new__(cls, time: bytes | datetime | str | int | None = None):
         if isinstance(time, Time):
             return time
-        
-        if isinstance(time, str) and len(time) == 14:
-            time += "000000"
-        
-        if isinstance(time, str):
+        if isinstance(time, datetime):
+            dt = time
+        elif isinstance(time, bytes):
+            dt = datetime(time)
+        elif isinstance(time, int):
+            dt = datetime.fromtimestamp(time)
+        elif isinstance(time, str):
             lower_time = time.lower()
             if lower_time == "min":
                 dt = datetime.min
@@ -24,11 +26,9 @@ class Time(datetime):
             elif lower_time == "now":
                 dt = datetime.now()
             else:
+                if isinstance(time, str) and len(time) < 20:
+                    time += "0" * (20 - len(time))
                 dt = datetime.strptime(time, _DATETIME_FORMAT)
-        elif isinstance(time, int):
-            dt = datetime.fromtimestamp(time)
-        elif isinstance(time, datetime):
-            dt = time
         elif time is None:
             dt = datetime.now()
         else:
