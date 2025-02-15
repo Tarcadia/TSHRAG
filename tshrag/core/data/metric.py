@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 
-from enum import Enum
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -27,6 +26,7 @@ class MetricId(str):
 @dataclass
 class Metric:
     id              : MetricId
+    name            : str                   = ""
     type            : str                   = ""
     description     : str                   = ""
 
