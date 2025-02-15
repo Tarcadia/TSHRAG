@@ -11,6 +11,7 @@ from ..data import Time
 
 class RunStatus(str, Enum):
     PENDING         = "PENDING"
+    PREPARING       = "PREPARING"
     RUNNING         = "RUNNING"
     COMPLETED       = "COMPLETED"
     FAILED          = "FAILED"
