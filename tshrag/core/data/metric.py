@@ -5,7 +5,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from .id import Id
+from .id import Id, sub_ids
 from .time import Time
 
 
@@ -15,7 +15,7 @@ class MetricId(str):
     SEPARATOR = "::"
 
     def __new__(cls, *keys):
-        _keys = [Id(k) for k in keys]
+        _keys = [id for k in keys for id in sub_ids(str(k))]
         return str.__new__(cls, cls.SEPARATOR.join(_keys))
     
     def keys(self):
