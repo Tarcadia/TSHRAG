@@ -15,7 +15,7 @@ from typing import List, Generator, Optional
 from portalocker import Lock
 
 from ..core import Time
-from ..core import MetricId, Metric, MetricEntry, Mdb
+from ..core import MetricId, MetricIdPattern, Metric, MetricEntry, Mdb
 from ..core import RunStatus
 from ..core import JobId, Job
 from ..core import TestId, Test
@@ -148,12 +148,12 @@ class Tshragd:
         return _mdbs
 
 
-    def _list_metric(self, test_id: TestId) -> List[Metric]:
+    def _list_metric(self, test_id: TestId, metric_id_pattern: MetricIdPattern) -> List[Metric]:
         _metrics = []
         _mdbs = self._list_mdb(test_id)
         for _mdb in _mdbs:
             try:
-                _metrics = _mdb.list()
+                _metrics = _mdb.list(metric_id_pattern)
             except:
                 # TODO: Log error
                 continue
@@ -279,11 +279,12 @@ class Tshragd:
         return job
 
 
-    def list_metric(self, test_id: TestId) -> List[Metric]:
+    def list_metric(self, test_id: TestId, metric_id_pattern: MetricIdPattern = MetricIdPattern()) -> List[Metric]:
         test_id = TestId(test_id)
+        metric_id_pattern = MetricIdPattern(metric_id_pattern)
         metrics = []
         try:
-            metrics = self._list_metric(test_id)
+            metrics = self._list_metric(test_id, metric_id_pattern)
         except:
             # TODO: Log error
             pass

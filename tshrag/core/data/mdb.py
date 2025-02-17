@@ -14,6 +14,7 @@ from portalocker import Lock
 
 from .time import Time
 from .metric import MetricId
+from .metric import MetricIdPattern
 from .metric import Metric
 from .metric import MetricEntry
 
@@ -76,9 +77,9 @@ class Mdb:
         return self._get_metric_path(id) / _file
 
 
-    def _glob_metric_index_file(self) -> Generator[Path, None, None]:
-        _file = f"*/{Mdb.MDB_FILE_INDEX}"
-        yield from self._root.glob(_file)
+    def _glob_metric_index_file(self, pattern: MetricIdPattern) -> Generator[Path, None, None]:
+        _file = self._get_metric_path(pattern) / Mdb.MDB_FILE_INDEX
+        yield from self._root.glob(_file.relative_to(self._root).as_posix())
 
 
     def _glob_metric_data_file(self, id: MetricId) -> Generator[Path, None, None]:
@@ -128,9 +129,10 @@ class Mdb:
         return metric
 
 
-    def list(self) -> List[Metric]:
+    def list(self, pattern: MetricIdPattern = MetricIdPattern()) -> List[Metric]:
+        pattern = MetricIdPattern(pattern)
         metrics = []
-        for _index in self._glob_metric_index_file():
+        for _index in self._glob_metric_index_file(pattern):
             try:
                 with _index.open("r") as fp:
                     _metric = Metric(**json.load(fp))

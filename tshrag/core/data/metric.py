@@ -23,6 +23,15 @@ class MetricId(str):
 
 
 
+class MetricIdPattern(MetricId):
+    def __new__(cls, *keys):
+        if not keys:
+            keys = ["*"]
+        _keys = [id for k in keys for id in sub_ids(str(k), id_chars=(Id.ID_CHARS + "*"))]
+        return str.__new__(cls, cls.SEPARATOR.join(_keys))
+
+
+
 @dataclass
 class Metric:
     id              : MetricId
