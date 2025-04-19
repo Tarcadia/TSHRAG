@@ -1,11 +1,15 @@
 
+# Core:
+Tshrag-MetircDB
+
 # Functional:
 portalocker
 tqdm
 
 # Interface:
+uvicorn
+fastapi
 click
-flask
 
 # Deployment:
 pyinstaller
