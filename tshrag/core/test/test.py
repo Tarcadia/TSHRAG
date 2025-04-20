@@ -2,36 +2,31 @@
 # -*- coding: UTF-8 -*-
 
 
+from typing import Union, Optional, Generic, TypeVar
+from typing import Iterable, Iterator, AsyncIterator
+from typing import Tuple, List, Set, Dict, Any
 from dataclasses import dataclass, field
-from typing import Dict, List
 
-from ..data import Id
-
+from ..time import Time
+from ..identifier import TestId, JobId, DutId
 from ..profile import Profile
+
 from .run import Run
-from .job import Job
-
-
-
-class TestId(Id):
-    pass
 
 
 
 @dataclass
 class Test(Run):
-    id              : TestId
-    profile         : Profile
-    dut             : Dict[str, str]        = field(default_factory=dict)
-    jobs            : List[Job]             = field(default_factory=list)
+    test            : TestId
+    dut             : Set[DutId]            = field(default_factory=set)
+    env             : Dict[str, str]        = field(default_factory=dict)
+    profile         : Optional[Profile]     = None
 
     def __post_init__(self):
         super().__post_init__()
-        self.id = TestId(self.id)
+        self.test = TestId(self.test)
+        self.dut = {DutId(dut) for dut in self.dut}
+        self.env = {str(k): str(v) for k, v in self.env.items()}
         if isinstance(self.profile, dict):
             self.profile = Profile(**self.profile)
-        if isinstance(self.jobs, list):
-            self.jobs = [
-                Job(**job) if isinstance(job, dict) else job
-                for job in self.jobs
-            ]
+
