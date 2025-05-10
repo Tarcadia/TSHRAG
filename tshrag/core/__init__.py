@@ -5,8 +5,10 @@
 from .time import Time
 from .identifier import Identifier, TestId, JobId, DutId
 
-from .test import RunStatus, Run, Job, Test
+from .metric import MetricKey, MetricInfo, MetricEntry
+from .metric import MetricDB
 from .profile import Profile
+from .test import RunStatus, Run, Job, Test
 
 from .identifier import split_identifier, is_identifier
 
@@ -17,11 +19,15 @@ __all__ = [
     "TestId",
     "JobId",
     "DutId",
+    "MetricKey",
+    "MetricInfo",
+    "MetricEntry",
+    "MetricDB",
+    "Profile",
     "RunStatus",
     "Run",
     "Job",
     "Test",
-    "Profile",
     "split_identifier",
     "is_identifier"
 ]
