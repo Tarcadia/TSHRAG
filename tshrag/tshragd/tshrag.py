@@ -143,3 +143,7 @@ class Tshrag:
                 self._set_test(test)
 
 
+    def run_test(self, id: TestId) -> None:
+        pass
+
+
