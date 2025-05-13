@@ -23,7 +23,7 @@ class Test(Run):
     machine         : Set[str]              = field(default_factory=set)
     device          : Set[str]              = field(default_factory=set)
     env             : Dict[str, str]        = field(default_factory=dict)
-    jobs            : Dict[JobId, Job]      = field(default_factory=dict)
+    jobs            : List[JobId]           = field(default_factory=list)
     mdb             : Optional[MetricDB]    = None
 
     def __post_init__(self):
@@ -37,11 +37,10 @@ class Test(Run):
             str(k): str(v)
             for k, v in self.env.items()
         }
-        self.jobs = {
-            JobId(id): Job(**job)
-            for id, job in self.jobs
-            if isinstance(job, dict)
-        }
+        self.jobs = [
+            JobId(id)
+            for id in self.jobs
+        ]
         if not self.mdb is None:
             self.mdb = MetricDB(self.mdb)
 
