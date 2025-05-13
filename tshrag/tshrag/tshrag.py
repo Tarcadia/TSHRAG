@@ -36,8 +36,7 @@ class Tshrag:
 
 
     FILE_LOCK = PATH_LOCK
-    FILE_STATUS = "status.json"
-    FILE_UPDATE = "update.json"
+    FILE_TEST = "status.json"
     FILE_METRIC = "metric.db"
 
 
@@ -57,7 +56,7 @@ class Tshrag:
 
 
     def _glob_test(self) -> Generator[TestId, None, None]:
-        for _path in self._root.glob(f"*/{Tshrag.FILE_META}"):
+        for _path in self._root.glob(f"*/{Tshrag.FILE_TEST}"):
             yield TestId(_path.parent.name)
 
     def _get_test_path(self, test_id: TestId) -> Path:
@@ -66,8 +65,8 @@ class Tshrag:
     def _get_test_lock(self, test_id: TestId) -> Path:
         return self._get_test_path(test_id) / Tshrag.FILE_LOCK
 
-    def _get_test_status(self, test_id: TestId) -> Path:
-        return self._get_test_path(test_id) / Tshrag.FILE_STATUS
+    def _get_test_file(self, test_id: TestId) -> Path:
+        return self._get_test_path(test_id) / Tshrag.FILE_TEST
 
     def _get_test_metric(self, test_id: TestId) -> Path:
         return self._get_test_path(test_id) / Tshrag.FILE_METRIC
@@ -81,11 +80,11 @@ class Tshrag:
             yield lock
 
     def _get_test(self, id: TestId) -> Test:
-        with self._get_test_status(id).open("r", encoding=self._encoding) as fp:
+        with self._get_test_file(id).open("r", encoding=self._encoding) as fp:
             return Test(**json.load(fp))
 
     def _set_test(self, test: Test):
-        with self._get_test_status(test.id).open("w", encoding=self._encoding) as fp:
+        with self._get_test_file(test.id).open("w", encoding=self._encoding) as fp:
             json.dump(asdict(test), fp, default=lambda value : str(value))
 
 
