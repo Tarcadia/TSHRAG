@@ -12,6 +12,7 @@ from .project import PROJECT_VERSION
 
 from .default import TIMEOUT
 from .default import ENCODING
+from .default import CONCURRENCY
 
 from .path import ROOT_MACHINE
 from .path import ROOT_USER
