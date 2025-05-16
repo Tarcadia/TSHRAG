@@ -2,6 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 
+from typing import Union, Optional, Generic, TypeVar
+from typing import Callable, Generator, Iterable, Iterator, AsyncIterator
+from typing import Tuple, List, Set, Dict, Any
+
 import uuid
 import json
 import shutil
@@ -11,9 +15,7 @@ import os
 from pathlib import Path
 from contextlib import contextmanager
 from dataclasses import asdict
-from typing import Union, Optional, Generic, TypeVar
-from typing import Generator, Iterable, Iterator, AsyncIterator
-from typing import Tuple, List, Set, Dict, Any
+from threading import Thread
 
 from portalocker import Lock
 
@@ -30,6 +32,7 @@ from ..util.consts import SYM_TSHRAG
 from ..util.consts import PATH_LOCK
 from ..util.consts import TIMEOUT
 from ..util.consts import ENCODING
+from ..util.consts import CONCURRENCY
 
 
 class Tshrag:
@@ -43,17 +46,23 @@ class Tshrag:
 
     def __init__(
         self,
-        root: Path,
-        timeout = TIMEOUT,
-        encoding = ENCODING,
-        config: Config = None
+        root        : Path,
+        timeout     : int                   = TIMEOUT,
+        encoding    : str                   = ENCODING,
+        max_workers : int                   = CONCURRENCY,
+        test_main   : Callable[["Tshrag", TestId], None] = None,
+        config      : Config                = None
     ):
         self._root = Path(root)
         self._timeout = timeout
         self._encoding = encoding
+        self._max_workers = max_workers
+        self._test_main = test_main
+
         if not config is None:
             config.pick_to(Tshrag.__name__, self)
         self._root.mkdir(parents=True, exist_ok=True)
+        self._workers = []
 
 
     def _get_lock(self) -> Path:
@@ -133,7 +142,8 @@ class Tshrag:
         device      : Set[str]              = None,
         env         : Dict[str, str]        = None,
     ) -> Test:
-        _id = TestId(profile.name + str(uuid.uuid4()))
+        _id = TestId(f"{profile.name}-{uuid.uuid4()}")
+        self._get_test_path(_id).mkdir(parents=True, exist_ok=True)
         _start_time = Time(start_time)
         _end_time = Time(end_time)
         _machine = machine or set()
@@ -151,8 +161,7 @@ class Tshrag:
             env = _env,
             mdb = _mdb,
         )
-        self._get_test_path(_id).mkdir(parents=True, exist_ok=True)
-        with self._test_lock(id) as lock:
+        with self._test_lock(_id) as lock:
             self._set_test(_test)
         return _test
 
@@ -191,16 +200,43 @@ class Tshrag:
                 self._set_job(test_id, job)
 
 
-    def launch_test(self, id: TestId) -> None:
-        pass
+    def task(self, id: TestId) -> Thread:
+        self._workers = [
+            _worker
+            for _worker in self._workers
+            if _worker.is_alive()
+        ]
+        if self._test_main is None:
+            return None
+        if len(self._workers) >= self._max_workers:
+            return None
+        
+        _worker = Thread(
+            target = self._test_main,
+            args = (self, id),
+            name = f"{SYM_TSHRAG}_{id}",
+        )
+        try:
+            with self.update_test(id) as test:
+                test.status = RunStatus.PREPARING
+                test.start_time = Time.now()
+            _worker.start()
+            self._workers.append(_worker)
+            return _worker
+        except Exception as e:
+            # TODO: Logging error
+            with self.update_test(id) as test:
+                test.status = RunStatus.CANCELLED
+                test.end_time = Time.now()
+            return None
 
 
     def refresh(self) -> None:
         with self._lock() as lock:
             _tests = sorted(
                 [
-                    self.tshrag.query_test(id)
-                    for id in self.tshrag.list_test()
+                    self.query_test(id)
+                    for id in self.list_test()
                 ],
                 key = lambda x: x.start_time,
             )
@@ -220,6 +256,6 @@ class Tshrag:
             ]
             for _test in _tests:
                 if _test.machine.isdisjoint(_occupied):
-                    _occupied.update(_test.machine)
-                    self.launch_test(_test.id)
+                    if self.task(_test.id):
+                        _occupied.update(_test.machine)
 
