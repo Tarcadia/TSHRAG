@@ -211,15 +211,38 @@ class Tshrag:
         if len(self._workers) >= self._max_workers:
             return None
         
+        def _wrap():
+            with self.update_test(id) as test:
+                test.start_time = Time.now()
+            try:
+                _ret = self._test_main(self, id)
+                _status = RunStatus.COMPLETED
+            except KeyboardInterrupt:
+                _ret = None
+                _status = RunStatus.CANCELLED
+            except Exception as e:
+                # TODO: Handle exception
+                _ret = None
+                _status = RunStatus.FAILED
+            with self.update_test(id) as test:
+                test.end_time = Time.now()
+                if test.status in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
+                    pass
+                elif test.status == RunStatus.RUNNING:
+                    test.status = _status
+                else:
+                    test.status = RunStatus.FAILED
+            return _ret
+        
         _worker = Thread(
-            target = self._test_main,
-            args = (self, id),
+            target = _wrap,
             name = f"{SYM_TSHRAG}_{id}",
         )
+        
         try:
             with self.update_test(id) as test:
-                test.status = RunStatus.PREPARING
-                test.start_time = Time.now()
+                if test.status == RunStatus.PENDING:
+                    test.status = RunStatus.PREPARING
             _worker.start()
             self._workers.append(_worker)
             return _worker
