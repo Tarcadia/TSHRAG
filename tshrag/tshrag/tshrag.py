@@ -255,7 +255,7 @@ class Tshrag:
                 and test.end_time > Time.now()
             ]
             for _test in _tests:
-                if _test.machine.isdisjoint(_occupied):
+                if _occupied.isdisjoint(_test.machine):
                     if self.task(_test.id):
                         _occupied.update(_test.machine)
 

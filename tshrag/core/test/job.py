@@ -16,8 +16,8 @@ from .run import Run
 @dataclass
 class Job(Run):
     id              : JobId
-    machine         : Optional[str]         = None
-    device          : Set[str]              = field(default_factory=set)
+    machine         : Optional[DutId]       = None
+    device          : List[DutId]           = field(default_factory=list)
     args            : List[str]             = field(default_factory=list)
     cwd             : str                   = ""
     env             : Dict[str, str]        = field(default_factory=dict)
@@ -27,8 +27,8 @@ class Job(Run):
     def __post_init__(self):
         super().__post_init__()
         self.id = JobId(self.id)
-        self.machine = self.machine and str(self.machine)
-        self.device = {str(d) for d in self.device}
+        self.machine = self.machine and DutId(self.machine)
+        self.device = list({DutId(d) for d in self.device})
         self.args = [str(arg) for arg in self.args]
         self.cwd = self.cwd.as_posix() if isinstance(self.cwd, Path) else str(self.cwd)
         self.env = {str(k): str(v) for k, v in self.env.items()}

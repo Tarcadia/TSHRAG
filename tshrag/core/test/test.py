@@ -21,8 +21,8 @@ from .job import Job
 class Test(Run):
     id              : TestId
     profile         : Optional[Profile]     = None
-    machine         : Set[str]              = field(default_factory=set)
-    device          : Set[str]              = field(default_factory=set)
+    machine         : List[DutId]           = field(default_factory=list)
+    device          : List[DutId]           = field(default_factory=list)
     env             : Dict[str, str]        = field(default_factory=dict)
     jobs            : List[JobId]           = field(default_factory=list)
     mdb             : Optional[Path]        = None
@@ -32,8 +32,8 @@ class Test(Run):
         self.id = TestId(self.id)
         if isinstance(self.profile, dict):
             self.profile = Profile(**self.profile)
-        self.machine = {str(m) for m in self.machine}
-        self.device = {str(d) for d in self.device}
+        self.machine = list({DutId(m) for m in self.machine})
+        self.device = list({DutId(d) for d in self.device})
         self.env = {
             str(k): str(v)
             for k, v in self.env.items()
