@@ -14,6 +14,9 @@ from .default import TIMEOUT
 from .default import ENCODING
 from .default import CONCURRENCY
 
+from .default import SERVICE_HOST
+from .default import SERVICE_PORT
+
 from .path import ROOT_MACHINE
 from .path import ROOT_USER
 from .path import ROOT_CWD
@@ -40,6 +43,8 @@ __all__ = [
     "TIMEOUT",
     "ENCODING",
     "CONCURRENCY",
+    "SERVICE_HOST",
+    "SERVICE_PORT",
     "ROOT_MACHINE",
     "ROOT_USER",
     "ROOT_CWD",
