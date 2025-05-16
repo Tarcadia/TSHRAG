@@ -18,13 +18,13 @@ from ..tshrag import Tshrag
 def TestAPI(tshrag: Tshrag):
     router = APIRouter()
 
-    @router.get("/tests")
-    def get_tests():
-        return tshrag.list_test()
+    # @router.get("/tests")
+    # def get_tests():
+    #     return tshrag.list_test()
 
-    @router.get("/test/{test_id}")
-    def get_test(test_id: TestId):
-        return tshrag.query_test(test_id)
+    # @router.get("/test/{test_id}")
+    # def get_test(test_id: TestId):
+    #     return tshrag.query_test(test_id)
 
     return router
 
