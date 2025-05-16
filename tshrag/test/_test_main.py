@@ -41,30 +41,26 @@ from ..util.consts import CONCURRENCY
 def test_main(tshrag: Tshrag, test_id: str) -> None:
     # TODO: Implement distribution
     with tshrag.update_test(test_id) as test:
-        if test.status == RunStatus.PREPARING:
-            test.status = RunStatus.RUNNING
-        elif test.status in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
+        test_end_time = test.end_time
+        if test.status in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
             return
+        elif test.status == RunStatus.PREPARING:
+            test.status = RunStatus.RUNNING
         else:
             # TODO: Handle status error
             return
-        end_time = test.end_time
-    while Time.now() < end_time:
+    while Time.now() < test_end_time:
         with tshrag.update_test(test_id) as test:
-            if test.status != RunStatus.RUNNING:
+            test_end_time = test.end_time
+            if test.status in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
                 return
-            end_time = test.end_time
+            elif test.status == RunStatus.RUNNING:
+                pass
+            else:
+                # TODO: Handle status error
+                return
         # TODO: Implement execution
         print(f"Test {test_id} is running...")
         time.sleep(TIMEOUT)
-    with tshrag.update_test(test_id) as test:
-        if test.status == RunStatus.RUNNING:
-            test.status = RunStatus.COMPLETED
-            test.end_time = Time.now()
-        elif test.status in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
-            return
-        else:
-            # TODO: Handle status error
-            return
 
 

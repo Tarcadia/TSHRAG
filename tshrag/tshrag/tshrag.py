@@ -211,11 +211,21 @@ class Tshrag:
         if len(self._workers) >= self._max_workers:
             return None
         
+        def _wrap():
+            _ret = self._test_main(self, id)
+            with self.update_test(id) as test:
+                test.end_time = Time.now()
+                if test.status == RunStatus.RUNNING:
+                    test.status = RunStatus.COMPLETED
+                elif test.status not in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
+                    test.status = RunStatus.FAILED
+            return _ret
+        
         _worker = Thread(
-            target = self._test_main,
-            args = (self, id),
+            target = _wrap,
             name = f"{SYM_TSHRAG}_{id}",
         )
+        
         try:
             with self.update_test(id) as test:
                 test.status = RunStatus.PREPARING
