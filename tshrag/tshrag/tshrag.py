@@ -259,3 +259,28 @@ class Tshrag:
                     if self.task(_test.id):
                         _occupied.update(_test.machine)
 
+
+
+    def startnow_test(self, id: TestId) -> None:
+        with self.update_test(id) as test:
+            if test.status == RunStatus.PENDING:
+                test.start_time = Time.now()
+                return True
+        return False
+
+
+    def endnow_test(self, id: TestId) -> None:
+        with self.update_test(id) as test:
+            if test.status not in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
+                test.end_time = Time.now()
+                return True
+        return False
+
+
+    def cancel_test(self, id: TestId) -> None:
+        with self.update_test(id) as test:
+            test.status = RunStatus.CANCELLED
+            return True
+        return False
+
+
