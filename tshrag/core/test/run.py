@@ -6,8 +6,6 @@ from enum import Enum
 from dataclasses import dataclass
 
 from ..time import Time
-from ..identifier import TestId, DutId
-from .run import Run
 
 
 
