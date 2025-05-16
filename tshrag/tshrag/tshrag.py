@@ -149,7 +149,7 @@ class Tshrag:
         _machine = machine or set()
         _device = device or set()
         _env = env or dict()
-        _mdb = MetricDB(self._get_test_metric(_id))
+        _mdb = self._get_test_metric(_id)
         _test = Test(
             id = _id,
             profile = profile,

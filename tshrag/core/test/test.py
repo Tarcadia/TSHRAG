@@ -5,6 +5,7 @@
 from typing import Optional
 from typing import Tuple, List, Set, Dict, Any
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from ..time import Time
 from ..identifier import TestId, JobId, DutId
@@ -24,7 +25,7 @@ class Test(Run):
     device          : Set[str]              = field(default_factory=set)
     env             : Dict[str, str]        = field(default_factory=dict)
     jobs            : List[JobId]           = field(default_factory=list)
-    mdb             : Optional[MetricDB]    = None
+    mdb             : Optional[Path]        = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -41,6 +42,9 @@ class Test(Run):
             JobId(id)
             for id in self.jobs
         ]
-        if not self.mdb is None:
-            self.mdb = MetricDB(self.mdb)
+        self.mdb = self.mdb and Path(self.mdb)
+
+
+    def get_mdb(self) -> MetricDB:
+        return self.mdb and MetricDB(self.mdb)
 
