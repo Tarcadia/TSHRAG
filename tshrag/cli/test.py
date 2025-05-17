@@ -64,20 +64,33 @@ def _format_job_detail(job: Job) -> str:
 
 
 
-def TestCLI(tshrag: Tshrag):
+def TestCLI(tshrag: Tshrag) -> click.Group:
     cli = click.Group()
 
 
     @cli.command()
-    def exit():
-        """Exit the CLI."""
-        click.echo("Exiting...")
-        raise click.Abort()
-
-
-    @cli.command()
-    def list():
-        _tests = [tshrag.query_test(t) for t in tshrag.list_test()]
+    @click.option("--start-time", "-t0",    type=Time, default=Time.min)
+    @click.option("--end-time", "-t1",      type=Time, default=Time.max)
+    @click.option("--machine", "-m",        type=str, multiple=True)
+    @click.option("--device", "-d",         type=str, multiple=True)
+    def list(
+        start_time: Time,
+        end_time: Time,
+        machine: List[str],
+        device: List[str],
+    ):
+        _start_time = Time(start_time)
+        _end_time = Time(end_time)
+        _machine = set(machine)
+        _device = set(device)
+        _tests = [
+            _test
+            for _id in tshrag.list_test()
+            if (_test := tshrag.query_test(_id))
+            if _test.end_time >= _start_time and _test.start_time <= _end_time
+            if _machine.issubset(_test.machine)
+            if _device.issubset(_test.device)
+        ]
         _header = _format_test_line(None, header=True)
         _lines = [_format_test_line(t) for t in _tests]
         click.echo("=" * len(_header))

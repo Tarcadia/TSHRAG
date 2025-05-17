@@ -24,6 +24,10 @@ from portalocker import Lock
 from .tshrag import Tshrag
 from .test import test_main
 from .cli import TestCLI
+from .cli import MetricCLI
+from .cli import ReportCLI
+from .cli import InteractiveCLI
+from .cli import merge_cli
 from .api import TestAPI
 from .api import MetricAPI
 from .api import ReportAPI
@@ -50,6 +54,9 @@ metric_api = MetricAPI(tshrag)
 report_api = ReportAPI(tshrag)
 
 test_cli = TestCLI(tshrag)
+metric_cli = MetricCLI(tshrag)
+report_cli = ReportCLI(tshrag)
+interactive_cli = InteractiveCLI(tshrag)
 
 
 
@@ -87,6 +94,12 @@ def _main():
 
 
 def _interactive():
+    cli = merge_cli([
+        test_cli,
+        metric_cli,
+        report_cli,
+        interactive_cli,
+    ])
     while True:
         user_input = click.prompt(SYM_TSHRAG, type=str, prompt_suffix="> ")
         args = shlex.split(user_input)
@@ -95,8 +108,8 @@ def _interactive():
             continue
 
         try:
-            ctx = test_cli.make_context(None, args=args)
-            test_cli.invoke(ctx)
+            ctx = cli.make_context(None, args=args)
+            cli.invoke(ctx)
         except click.exceptions.Exit:
             continue
         except click.exceptions.Abort:
@@ -111,8 +124,13 @@ def _interactive():
 
 
 def _command(args: Tuple[str, ...]):
-    ctx = test_cli.make_context(SYM_TSHRAG, args=list(args))
-    test_cli.invoke(ctx)
+    cli = merge_cli([
+        test_cli,
+        metric_cli,
+        report_cli,
+    ])
+    ctx = cli.make_context(SYM_TSHRAG, args=list(args))
+    cli.invoke(ctx)
 
 
 
