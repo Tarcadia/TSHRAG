@@ -177,7 +177,7 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @click.pass_context
     def stop(ctx: Context):
         test_id = ctx.obj["test-id"]
-        if(tshrag.endnow_test(test_id)):
+        if(tshrag.stopnow_test(test_id)):
             click.echo(f"Test {test_id} stopped.")
         else:
             click.echo(f"Test {test_id} failed stop.")

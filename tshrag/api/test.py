@@ -160,7 +160,7 @@ def TestAPI(tshrag: Tshrag):
         test_id: str,
     ):
         _test_id = TestId(test_id)
-        if(tshrag.endnow_test(_test_id)):
+        if(tshrag.stopnow_test(_test_id)):
             return f"Test {test_id} stopped."
         else:
             raise Exception(f"Test {test_id} failed stop.")

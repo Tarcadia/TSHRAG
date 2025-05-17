@@ -284,7 +284,7 @@ class Tshrag:
 
 
 
-    def startnow_test(self, id: TestId) -> None:
+    def startnow_test(self, id: TestId) -> bool:
         with self.update_test(id) as test:
             if test.status == RunStatus.PENDING:
                 test.start_time = Time.now()
@@ -292,7 +292,7 @@ class Tshrag:
         return False
 
 
-    def endnow_test(self, id: TestId) -> None:
+    def stopnow_test(self, id: TestId) -> bool:
         with self.update_test(id) as test:
             if test.status not in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
                 test.end_time = Time.now()
@@ -300,7 +300,7 @@ class Tshrag:
         return False
 
 
-    def cancel_test(self, id: TestId) -> None:
+    def cancel_test(self, id: TestId) -> bool:
         with self.update_test(id) as test:
             test.status = RunStatus.CANCELLED
             return True
