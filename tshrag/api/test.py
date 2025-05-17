@@ -144,6 +144,21 @@ def TestAPI(tshrag: Tshrag):
         return asdict(_job)
 
 
+    @router.post("/test/{test_id}/reschedule")
+    def reschedule_test(
+        test_id: str,
+        start_time: Optional[str],
+        end_time: Optional[str],
+    ):
+        _test_id = TestId(test_id)
+        _start_time = start_time and Time(start_time)
+        _end_time = end_time and Time(end_time)
+        if(tshrag.reschedule_test(_test_id, _start_time, _end_time)):
+            return f"Test {test_id} rescheduled."
+        else:
+            raise Exception(f"Test {test_id} failed reschedule.")
+
+
     @router.post("/test/{test_id}/start")
     def start_test(
         test_id: str,

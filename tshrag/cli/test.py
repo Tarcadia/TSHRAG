@@ -141,14 +141,19 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @cli.group()
     @click.argument("test-id", type=TestId)
     @click.pass_context
-    def test(ctx: Context, test_id: TestId):
+    def test(
+        ctx: Context,
+        test_id: TestId,
+    ):
         ctx.ensure_object(dict)
         ctx.obj["test-id"] = test_id
 
 
     @test.command()
     @click.pass_context
-    def detail(ctx: Context):
+    def detail(
+        ctx: Context,
+    ):
         test_id = ctx.obj["test-id"]
         test = tshrag.query_test(test_id)
         click.echo(_format_test_detail(test))
@@ -157,15 +162,36 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @test.command()
     @click.argument("job-id", type=JobId)
     @click.pass_context
-    def job(ctx: Context, job_id: JobId):
+    def job(
+        ctx: Context,
+        job_id: JobId,
+    ):
         test_id = ctx.obj["test-id"]
         job = tshrag.query_job(test_id, job_id)
         click.echo(_format_job_detail(job))
 
 
     @test.command()
+    @click.option("--start-time", "-t0",    type=Time, default=None)
+    @click.option("--end-time", "-t1",      type=Time, default=None)
     @click.pass_context
-    def start(ctx: Context):
+    def reschedule(
+        ctx: Context,
+        start_time: Optional[Time],
+        end_time: Optional[Time],
+    ):
+        test_id = ctx.obj["test-id"]
+        if(tshrag.reschedule_test(test_id, start_time, end_time)):
+            click.echo(f"Test {test_id} rescheduled.")
+        else:
+            click.echo(f"Test {test_id} failed reschedule.")
+
+
+    @test.command()
+    @click.pass_context
+    def start(
+        ctx: Context
+    ):
         test_id = ctx.obj["test-id"]
         if(tshrag.startnow_test(test_id)):
             click.echo(f"Test {test_id} started.")
@@ -175,7 +201,9 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
 
     @test.command()
     @click.pass_context
-    def stop(ctx: Context):
+    def stop(
+        ctx: Context
+    ):
         test_id = ctx.obj["test-id"]
         if(tshrag.stopnow_test(test_id)):
             click.echo(f"Test {test_id} stopped.")
@@ -185,7 +213,9 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
 
     @test.command()
     @click.pass_context
-    def cancel(ctx: Context):
+    def cancel(
+        ctx: Context
+    ):
         test_id = ctx.obj["test-id"]
         if(tshrag.cancel_test(test_id)):
             click.echo(f"Test {test_id} cancelled.")
