@@ -30,6 +30,7 @@ from .cli import InteractiveCLI
 from .cli import merge_cli
 from .api import TestAPI
 from .api import MetricAPI
+from .api import MetricWsAPI
 from .api import ReportAPI
 
 from .util.consts import SYM_TSHRAG
@@ -51,6 +52,7 @@ daemon_lock = Lock(root / "daemon.lock", timeout=TIMEOUT)
 
 test_api = TestAPI(tshrag)
 metric_api = MetricAPI(tshrag)
+metric_wsapi = MetricWsAPI(tshrag)
 report_api = ReportAPI(tshrag)
 
 test_cli = TestCLI(tshrag)
@@ -72,6 +74,7 @@ def _main():
         app = FastAPI()
         app.include_router(test_api, prefix="/api/v1")
         app.include_router(metric_api, prefix="/api/v1")
+        app.include_router(metric_wsapi, prefix="/wsapi/v1")
         app.include_router(report_api, prefix="/api/v1")
         app = Thread(
             target=uvicorn.run,
