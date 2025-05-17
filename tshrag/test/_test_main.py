@@ -42,7 +42,7 @@ def test_main(tshrag: Tshrag, test_id: str) -> None:
     # TODO: Implement distribution
     with tshrag.update_test(test_id) as test:
         test_end_time = test.end_time
-        if test.status in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
+        if test.status in Tshrag.RUNSTATUS_POST_TEST:
             return
         elif test.status == RunStatus.PREPARING:
             test.status = RunStatus.RUNNING
@@ -52,7 +52,7 @@ def test_main(tshrag: Tshrag, test_id: str) -> None:
     while Time.now() < test_end_time:
         with tshrag.update_test(test_id) as test:
             test_end_time = test.end_time
-            if test.status in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
+            if test.status in Tshrag.RUNSTATUS_POST_TEST:
                 return
             elif test.status == RunStatus.RUNNING:
                 pass

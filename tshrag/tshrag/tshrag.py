@@ -43,6 +43,21 @@ class Tshrag:
     FILE_METRIC = "metric.db"
     PATH_JOBS = "jobs"
 
+    RUNSTATUS_PRE_TEST = {
+        RunStatus.PENDING
+    }
+
+    RUNSTATUS_IN_TEST = {
+        RunStatus.PREPARING,
+        RunStatus.RUNNING,
+    }
+
+    RUNSTATUS_POST_TEST = {
+        RunStatus.CANCELLED,
+        RunStatus.COMPLETED,
+        RunStatus.FAILED,
+    }
+
 
     def __init__(
         self,
@@ -226,7 +241,7 @@ class Tshrag:
                 _status = RunStatus.FAILED
             with self.update_test(id) as test:
                 test.end_time = Time.now()
-                if test.status in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
+                if test.status in Tshrag.RUNSTATUS_POST_TEST:
                     pass
                 elif test.status == RunStatus.RUNNING:
                     test.status = _status
@@ -241,7 +256,7 @@ class Tshrag:
         
         try:
             with self.update_test(id) as test:
-                if test.status == RunStatus.PENDING:
+                if test.status in Tshrag.RUNSTATUS_PRE_TEST:
                     test.status = RunStatus.PREPARING
             _worker.start()
             self._workers.append(_worker)
@@ -267,13 +282,12 @@ class Tshrag:
                 machine
                 for test in _tests
                 for machine in test.machine
-                if test.status == RunStatus.RUNNING
-                or test.status == RunStatus.PREPARING
+                if test.status in Tshrag.RUNSTATUS_IN_TEST
             }
             _tests = [
                 test
                 for test in _tests
-                if test.status == RunStatus.PENDING
+                if test.status in Tshrag.RUNSTATUS_PRE_TEST
                 and test.start_time < Time.now()
                 and test.end_time > Time.now()
             ]
@@ -284,23 +298,54 @@ class Tshrag:
 
 
 
-    def startnow_test(self, id: TestId) -> bool:
+    def reschedule_test(
+        self,
+        id: TestId,
+        start_time: Optional[Time] = None,
+        end_time: Optional[Time] = None,
+    ) -> bool:
         with self.update_test(id) as test:
-            if test.status == RunStatus.PENDING:
-                test.start_time = Time.now()
-                return True
+            _start_time = test.start_time
+            _end_time = test.end_time
+            if start_time is not None:
+                if test.status not in Tshrag.RUNSTATUS_PRE_TEST:
+                    return False
+                _start_time = Time(start_time)
+            if end_time is not None:
+                if test.status in Tshrag.RUNSTATUS_POST_TEST:
+                    return False
+                _end_time = Time(end_time)
+            test.start_time = _start_time
+            test.end_time = _end_time
+            return True
         return False
 
 
-    def stopnow_test(self, id: TestId) -> bool:
-        with self.update_test(id) as test:
-            if test.status not in (RunStatus.CANCELLED, RunStatus.COMPLETED, RunStatus.FAILED):
-                test.end_time = Time.now()
-                return True
-        return False
+    def startnow_test(
+        self,
+        id: TestId
+    ) -> bool:
+        return self.reschedule_test(
+            id,
+            start_time = Time.now(),
+        )
 
 
-    def cancel_test(self, id: TestId) -> bool:
+    def stopnow_test(
+        self,
+        id: TestId
+    ) -> bool:
+        return self.reschedule_test(
+            id,
+            end_time = Time.now(),
+        )
+
+
+
+    def cancel_test(
+        self,
+        id: TestId
+    ) -> bool:
         with self.update_test(id) as test:
             test.status = RunStatus.CANCELLED
             return True
