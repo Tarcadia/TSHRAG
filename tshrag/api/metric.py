@@ -34,6 +34,83 @@ def _get_mdb(tshrag: Tshrag, test_id: TestId) -> MetricDB:
     return tshrag.query_test(test_id).get_mdb()
 
 
+def _get_nums(entries: List[MetricEntry]) -> List[float]:
+    _nums = []
+    for _entry in entries:
+        try:
+            _value = float(_entry.value)
+            _nums.append(_value)
+        except Exception as e:
+            pass
+    return _nums
+
+def _get_numsum(entries: List[MetricEntry]) -> float:
+    _nums = _get_nums(entries)
+    return sum(_nums) if _nums else None
+
+def _get_numavg(entries: List[MetricEntry]) -> float:
+    _nums = _get_nums(entries)
+    return sum(_nums) / len(_nums) if _nums else None
+
+def _get_nummin(entries: List[MetricEntry]) -> float:
+    _nums = _get_nums(entries)
+    return min(_nums) if _nums else None
+
+def _get_nummax(entries: List[MetricEntry]) -> float:
+    _nums = _get_nums(entries)
+    return max(_nums) if _nums else None
+
+def _get_numhist(entries: List[MetricEntry]) -> Dict[float, int]:
+    _nums = _get_nums(entries)
+    _bin = {}
+    for _num in _nums:
+        if _num not in _bin:
+            _bin[_num] = 0
+        _bin[_num] += 1
+    return _bin
+
+def _get_hist(entries: List[MetricEntry]) -> Dict[str, int]:
+    _bin = {}
+    for entry in entries:
+        if entry.value not in _bin:
+            _bin[entry.value] = 0
+        _bin[entry.value] += 1
+    return _bin
+
+STATISTIC_MAP = {
+    "num"   : _get_nums,
+    "sum"   : _get_numsum,
+    "avg"   : _get_numavg,
+    "min"   : _get_nummin,
+    "max"   : _get_nummax,
+    "hist"  : _get_hist,
+}
+
+
+
+def _get_entries(
+    tshrag      : Tshrag,
+    test_id     : str,
+    key         : str,
+    dut         : List[str],
+    start_time  : str,
+    end_time    : str,
+):
+    _test_id = TestId(test_id)
+    _key = MetricKey(key)
+    _mdb = _get_mdb(tshrag, _test_id)
+    _dut = set(dut)
+    _start_time = start_time and Time(start_time)
+    _end_time = end_time and Time(end_time)
+    return _mdb.query_metric_entry(
+        key         = _key,
+        test        = _test_id,
+        dut         = _dut,
+        start_time  = _start_time,
+        end_time    = _end_time,
+    )
+
+
 
 def MetricAPI(tshrag: Tshrag):
     router = APIRouter()
@@ -86,20 +163,37 @@ def MetricAPI(tshrag: Tshrag):
         start_time  : str                   = Query(None),
         end_time    : str                   = Query(None),
     ):
-        _test_id = TestId(test_id)
-        _key = MetricKey(key)
-        _mdb = _get_mdb(tshrag, _test_id)
-        _dut = set(dut)
-        _start_time = start_time and Time(start_time)
-        _end_time = end_time and Time(end_time)
-        _entries = _mdb.query_metric_entry(
-            key         = _key,
-            test        = _test_id,
-            dut         = _dut,
-            start_time  = _start_time,
-            end_time    = _end_time,
+        _entries = _get_entries(
+            tshrag,
+            test_id,
+            key,
+            dut,
+            start_time,
+            end_time,
         )
         return [asdict(_entry) for _entry in _entries]
+
+
+    @router.get("/metric/{test_id}/{statistic}")
+    @router.get("/metric/{test_id}/{statistic}/{key}")
+    def query_metric_statistic(
+        test_id     : str,
+        statistic   : str,
+        key         : str,
+        dut         : List[str]             = Query([]),
+        start_time  : str                   = Query(None),
+        end_time    : str                   = Query(None),
+    ):
+        _entries = _get_entries(
+            tshrag,
+            test_id,
+            key,
+            dut,
+            start_time,
+            end_time,
+        )
+        _statistic = STATISTIC_MAP[statistic](_entries)
+        return _statistic
 
 
     @router.post("/metric/{test_id}/entry")
