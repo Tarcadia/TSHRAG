@@ -88,6 +88,24 @@ STATISTIC_MAP = {
 
 
 
+@dataclass
+class MetricEntryUpdate:
+    key         : MetricKey
+    dut         : List[str]             = field(default_factory=list)
+    entries     : List[MetricEntry]     = field(default_factory=list)
+
+    def __post_init__(self):
+        self.key = MetricKey(self.key)
+        self.dut = list({DutId(d) for d in self.dut})
+        self.entries = [
+            MetricEntry(**entry)
+            if isinstance(entry, dict)
+            else entry
+            for entry in self.entries
+        ]
+
+
+
 def _get_entries(
     tshrag      : Tshrag,
     test_id     : str,
@@ -224,23 +242,6 @@ def MetricAPI(tshrag: Tshrag):
 
 def MetricWsAPI(tshrag: Tshrag):
     router = APIRouter()
-
-
-    @dataclass
-    class MetricEntryUpdate:
-        key         : MetricKey
-        dut         : List[str]             = field(default_factory=list)
-        entries     : List[MetricEntry]     = field(default_factory=list)
-
-        def __post_init__(self):
-            self.key = MetricKey(self.key)
-            self.dut = list({DutId(d) for d in self.dut})
-            self.entries = [
-                MetricEntry(**entry)
-                if isinstance(entry, dict)
-                else entry
-                for entry in self.entries
-            ]
 
 
     @router.websocket("/metric/{test_id}/entry")
