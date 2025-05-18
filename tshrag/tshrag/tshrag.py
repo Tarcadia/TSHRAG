@@ -133,7 +133,7 @@ class Tshrag:
 
     def _set_test(self, test: Test):
         with self._get_test_file(test.id).open("w", encoding=self._encoding) as fp:
-            json.dump(asdict(test), fp, default=lambda value : str(value))
+            json.dump(asdict(test), fp, default=str)
 
     def _get_job(self, test_id: TestId, job_id: JobId) -> Job:
         with self._get_job_file(test_id, job_id).open("r", encoding=self._encoding) as fp:
@@ -141,7 +141,7 @@ class Tshrag:
 
     def _set_job(self, test_id: TestId, job: Job):
         with self._get_job_file(test_id, job.id).open("w", encoding=self._encoding) as fp:
-            json.dump(asdict(job), fp, default=lambda value : str(value))
+            json.dump(asdict(job), fp, default=str)
 
 
     def list_test(self) -> List[TestId]:
