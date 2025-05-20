@@ -273,8 +273,9 @@ class Tshrag:
         with self._lock() as lock:
             _tests = sorted(
                 [
-                    self.query_test(id)
+                    test
                     for id in self.list_test()
+                    if (test := self.query_test(id))
                 ],
                 key = lambda x: x.start_time,
             )
