@@ -284,15 +284,19 @@ class Tshrag:
                 for machine in test.machine
                 if test.status in Tshrag.RUNSTATUS_IN_TEST
             }
-            _tests = [
-                test
-                for test in _tests
-                if test.status in Tshrag.RUNSTATUS_PRE_TEST
-                and test.start_time < Time.now()
-                and test.end_time > Time.now()
-            ]
             for _test in _tests:
-                if _occupied.isdisjoint(_test.machine):
+                if (
+                    _test.status in Tshrag.RUNSTATUS_PRE_TEST
+                    and _test.end_time < Time.now()
+                ):
+                    with self.update_test(_test.id) as test:
+                        test.status = RunStatus.CANCELLED
+                elif (
+                    _test.status in Tshrag.RUNSTATUS_PRE_TEST
+                    and _test.start_time < Time.now()
+                    and _test.end_time > Time.now()
+                    and _occupied.isdisjoint(_test.machine)
+                ):
                     if self.task(_test.id):
                         _occupied.update(_test.machine)
 
