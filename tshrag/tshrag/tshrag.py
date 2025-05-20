@@ -55,7 +55,7 @@ class Tshrag:
     RUNSTATUS_POST_TEST = {
         RunStatus.CANCELLED,
         RunStatus.COMPLETED,
-        RunStatus.FAILED,
+        RunStatus.CRASHED,
     }
 
 
@@ -238,7 +238,7 @@ class Tshrag:
             except Exception as e:
                 # TODO: Handle exception
                 _ret = None
-                _status = RunStatus.FAILED
+                _status = RunStatus.CRASHED
             with self.update_test(id) as test:
                 test.end_time = Time.now()
                 if test.status in Tshrag.RUNSTATUS_POST_TEST:
@@ -246,7 +246,7 @@ class Tshrag:
                 elif test.status == RunStatus.RUNNING:
                     test.status = _status
                 else:
-                    test.status = RunStatus.FAILED
+                    test.status = RunStatus.CRASHED
             return _ret
         
         _worker = Thread(

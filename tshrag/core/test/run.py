@@ -14,7 +14,7 @@ class RunStatus(str, Enum):
     PREPARING       = "PREPARING"
     RUNNING         = "RUNNING"
     COMPLETED       = "COMPLETED"
-    FAILED          = "FAILED"
+    CRASHED         = "CRASHED"
     CANCELLED       = "CANCELLED"
 
 
