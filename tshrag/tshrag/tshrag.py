@@ -159,6 +159,7 @@ class Tshrag:
     ) -> Test:
         _id = TestId(f"{profile.name}-{uuid.uuid4()}")
         self._get_test_path(_id).mkdir(parents=True, exist_ok=True)
+        self._get_test_job_root(_id).mkdir(parents=True, exist_ok=True)
         _start_time = Time(start_time)
         _end_time = Time(end_time)
         _machine = machine or set()
@@ -186,6 +187,30 @@ class Tshrag:
             return self._get_test(id)
         except:
             return None
+
+
+    def create_job(
+        self,
+        test_id     : TestId,
+        job_prefix  : JobId                 = None,
+    ) -> Job:
+        if job_prefix is None:
+            _id = JobId(f"{uuid.uuid4()}")
+        else:
+            _id = JobId(f"{job_prefix}.{uuid.uuid4()}")
+        _start_time = Time.now()
+        _end_time = Time.max
+        _job = Job(
+            id=_id,
+            status=RunStatus.PENDING,
+            start_time=_start_time,
+            end_time=_end_time,
+        )
+        with self.update_test(test_id) as test:
+            with self._job_lock(test_id, _id) as lock:
+                self._set_job(test_id, _job)
+            test.jobs.append(_id)
+        return _job
 
 
     def query_job(self, test_id: TestId, job_id: JobId) -> Optional[Job]:
