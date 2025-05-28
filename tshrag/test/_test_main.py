@@ -11,6 +11,7 @@ import json
 import shutil
 import time
 import os
+import socket
 
 from pathlib import Path
 from contextlib import contextmanager
@@ -28,6 +29,9 @@ from ..core import RunStatus, Run, Job, Test
 
 from ..tshrag import Tshrag
 
+from ._distribute import distribute
+from ._execute import execute
+
 from ..util.config import Config
 
 from ..util.consts import SYM_TSHRAG
@@ -36,12 +40,15 @@ from ..util.consts import TIMEOUT
 from ..util.consts import ENCODING
 from ..util.consts import CONCURRENCY
 
+from ..util.consts import SERVICE_HOST
+from ..util.consts import SERVICE_PORT
+
 
 
 def test_main(tshrag: Tshrag, test_id: str) -> None:
-    # TODO: Implement distribution
+    host = f"{socket.gethostname()}:{SERVICE_PORT}"
+    distribute(tshrag, test_id, host)
     with tshrag.update_test(test_id) as test:
-        test_end_time = test.end_time
         if test.status in Tshrag.RUNSTATUS_POST_TEST:
             return
         elif test.status == RunStatus.PREPARING:
@@ -49,18 +56,6 @@ def test_main(tshrag: Tshrag, test_id: str) -> None:
         else:
             # TODO: Handle status error
             return
-    while Time.now() < test_end_time:
-        with tshrag.update_test(test_id) as test:
-            test_end_time = test.end_time
-            if test.status in Tshrag.RUNSTATUS_POST_TEST:
-                return
-            elif test.status == RunStatus.RUNNING:
-                pass
-            else:
-                # TODO: Handle status error
-                return
-        # TODO: Implement execution
-        print(f"Test {test_id} is running...")
-        time.sleep(TIMEOUT)
-
+    execute(tshrag, test_id, host)
+    return
 

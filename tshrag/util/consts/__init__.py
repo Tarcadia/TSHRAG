@@ -27,9 +27,13 @@ from .path import PATH_LOCK
 from .path import PATH_CONFIG
 
 from .env import ENV_PREFIX
-from .env import ENV_MACHINE
-from .env import ENV_DEVICE
-from .env import ENV_MDB
+from .env import ENV_HOST
+from .env import ENV_TEST_ID
+from .env import ENV_TEST_MACHINE
+from .env import ENV_TEST_DEVICE
+from .env import ENV_JOB_ID
+from .env import ENV_JOB_MACHINE
+from .env import ENV_JOB_DEVICE
 
 
 __all__ = [
@@ -54,9 +58,13 @@ __all__ = [
     "PATH_LOCK",
     "PATH_CONFIG",
     "ENV_PREFIX",
-    "ENV_MACHINE",
-    "ENV_DEVICE",
-    "ENV_MDB",
+    "ENV_HOST",
+    "ENV_TEST_ID",
+    "ENV_TEST_MACHINE",
+    "ENV_TEST_DEVICE",
+    "ENV_JOB_ID",
+    "ENV_JOB_MACHINE",
+    "ENV_JOB_DEVICE",
 ]
 
 
