@@ -11,6 +11,7 @@ from .profile import Profile
 from .test import RunStatus, Run, Job, Test
 
 from .identifier import split_identifier, is_identifier
+from .schema import Schema
 
 
 __all__ = [
@@ -29,7 +30,8 @@ __all__ = [
     "Job",
     "Test",
     "split_identifier",
-    "is_identifier"
+    "is_identifier",
+    "Schema",
 ]
 
 
