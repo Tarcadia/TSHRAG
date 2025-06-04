@@ -20,6 +20,10 @@ from .job import Job
 @dataclass
 class Test(Run):
     id              : TestId
+    schedule_start_time     : Time          = None
+    schedule_end_time       : Time          = Time.max
+    schedule_duration       : int           = -1
+    schedule_run_duration   : int           = -1
     profile         : Optional[Profile]     = None
     machine         : List[DutId]           = field(default_factory=list)
     device          : List[DutId]           = field(default_factory=list)
@@ -30,6 +34,10 @@ class Test(Run):
     def __post_init__(self):
         super().__post_init__()
         self.id = TestId(self.id)
+        self.schedule_start_time = Time(self.schedule_start_time)
+        self.schedule_end_time = Time(self.schedule_end_time)
+        self.schedule_duration = int(self.schedule_duration)
+        self.schedule_run_duration = int(self.schedule_run_duration)
         if isinstance(self.profile, dict):
             self.profile = Profile(**self.profile)
         self.machine = list({DutId(m) for m in self.machine})

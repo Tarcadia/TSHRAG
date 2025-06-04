@@ -170,8 +170,12 @@ class Tshrag:
             id = _id,
             profile = profile,
             status = RunStatus.PENDING,
-            start_time = _start_time,
-            end_time = _end_time,
+            schedule_start_time = _start_time,
+            schedule_end_time = _end_time,
+            schedule_duration = -1,
+            schedule_run_duration = -1,
+            start_time = Time.max,
+            end_time = Time.max,
             machine = _machine,
             device = _device,
             env = _env,
@@ -241,16 +245,8 @@ class Tshrag:
 
 
     def task(self, id: TestId) -> Thread:
-        self._workers = [
-            _worker
-            for _worker in self._workers
-            if _worker.is_alive()
-        ]
         if self._test_main is None:
             return None
-        if len(self._workers) >= self._max_workers:
-            return None
-        
         def _wrap():
             with self.update_test(id) as test:
                 test.start_time = Time.now()
@@ -284,7 +280,6 @@ class Tshrag:
                 if test.status in Tshrag.RUNSTATUS_PRE_TEST:
                     test.status = RunStatus.PREPARING
             _worker.start()
-            self._workers.append(_worker)
             return _worker
         except Exception as e:
             # TODO: Logging error
@@ -295,6 +290,13 @@ class Tshrag:
 
 
     def refresh(self) -> None:
+        self._workers = [
+            _worker
+            for _worker in self._workers
+            if _worker.is_alive()
+        ]
+        if len(self._workers) >= self._max_workers:
+            return
         with self._lock() as lock:
             _tests = sorted(
                 [
@@ -302,7 +304,7 @@ class Tshrag:
                     for id in self.list_test()
                     if (test := self.query_test(id))
                 ],
-                key = lambda x: x.start_time,
+                key = lambda x: x.schedule_start_time,
             )
             _occupied = {
                 machine
@@ -311,20 +313,23 @@ class Tshrag:
                 if test.status in Tshrag.RUNSTATUS_IN_TEST
             }
             for _test in _tests:
-                if (
-                    _test.status in Tshrag.RUNSTATUS_PRE_TEST
-                    and _test.end_time < Time.now()
-                ):
-                    with self.update_test(_test.id) as test:
-                        test.status = RunStatus.CANCELLED
-                elif (
-                    _test.status in Tshrag.RUNSTATUS_PRE_TEST
-                    and _test.start_time < Time.now()
-                    and _test.end_time > Time.now()
-                    and _occupied.isdisjoint(_test.machine)
-                ):
-                    if self.task(_test.id):
-                        _occupied.update(_test.machine)
+                if _test.status in Tshrag.RUNSTATUS_PRE_TEST:
+                    if (
+                        _test.schedule_end_time < Time.now()
+                        or _test.schedule_duration > 0
+                        and _test.schedule_end_time < Time.now() + _test.schedule_duration
+                        or _test.schedule_run_duration > 0
+                        and _test.schedule_end_time < Time.now() + _test.schedule_run_duration
+                    ):
+                        with self.update_test(_test.id) as test:
+                            test.status = RunStatus.CANCELLED
+                    elif (
+                        _test.schedule_start_time < Time.now()
+                        and _occupied.isdisjoint(_test.machine)
+                    ):
+                        if (_worker := self.task(_test.id)):
+                            _occupied.update(_test.machine)
+                            self._workers.append(_worker)
 
 
 
@@ -335,8 +340,8 @@ class Tshrag:
         end_time: Optional[Time] = None,
     ) -> bool:
         with self.update_test(id) as test:
-            _start_time = test.start_time
-            _end_time = test.end_time
+            _start_time = test.schedule_start_time
+            _end_time = test.schedule_end_time
             if start_time is not None:
                 if test.status not in Tshrag.RUNSTATUS_PRE_TEST:
                     return False
@@ -345,8 +350,8 @@ class Tshrag:
                 if test.status in Tshrag.RUNSTATUS_POST_TEST:
                     return False
                 _end_time = Time(end_time)
-            test.start_time = _start_time
-            test.end_time = _end_time
+            test.schedule_start_time = _start_time
+            test.schedule_end_time = _end_time
             return True
         return False
 
