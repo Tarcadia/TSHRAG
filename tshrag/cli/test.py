@@ -91,6 +91,7 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
             if _machine.issubset(_test.machine)
             if _device.issubset(_test.device)
         ]
+        _tests = sorted(_tests, key=lambda x: x.start_time, reverse=True)
         _header = _format_test_line(None, header=True)
         _lines = [_format_test_line(t) for t in _tests]
         click.echo("=" * len(_header))
