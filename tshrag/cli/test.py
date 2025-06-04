@@ -175,14 +175,23 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @test.command()
     @click.option("--start-time", "-t0",    type=Time, default=None)
     @click.option("--end-time", "-t1",      type=Time, default=None)
+    @click.option("--duration", "-d",       type=int, default=None)
     @click.pass_context
     def reschedule(
-        ctx: Context,
-        start_time: Optional[Time],
-        end_time: Optional[Time],
+        ctx         : Context,
+        start_time  : Optional[Time]        = None,
+        end_time    : Optional[Time]        = None,
+        duration    : Optional[int]         = None,
     ):
         test_id = ctx.obj["test-id"]
-        if(tshrag.reschedule_test(test_id, start_time, end_time)):
+        if(
+            tshrag.reschedule_test(
+                id=test_id,
+                start_time=start_time,
+                end_time=end_time,
+                duration=duration,
+            )
+        ):
             click.echo(f"Test {test_id} rescheduled.")
         else:
             click.echo(f"Test {test_id} failed reschedule.")

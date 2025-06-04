@@ -153,6 +153,7 @@ class Tshrag:
         profile     : Profile,
         start_time  : Time                  = None,
         end_time    : Time                  = Time.max,
+        duration    : int                   = -1,
         machine     : Set[str]              = None,
         device      : Set[str]              = None,
         env         : Dict[str, str]        = None,
@@ -162,6 +163,7 @@ class Tshrag:
         self._get_test_job_root(_id).mkdir(parents=True, exist_ok=True)
         _start_time = Time(start_time)
         _end_time = Time(end_time)
+        _duration = int(duration)
         _machine = machine or set()
         _device = device or set()
         _env = env or dict()
@@ -172,6 +174,7 @@ class Tshrag:
             status = RunStatus.PENDING,
             start_time = _start_time,
             end_time = _end_time,
+            duration = _duration,
             machine = _machine,
             device = _device,
             env = _env,
@@ -241,16 +244,8 @@ class Tshrag:
 
 
     def task(self, id: TestId) -> Thread:
-        self._workers = [
-            _worker
-            for _worker in self._workers
-            if _worker.is_alive()
-        ]
         if self._test_main is None:
             return None
-        if len(self._workers) >= self._max_workers:
-            return None
-        
         def _wrap():
             with self.update_test(id) as test:
                 test.start_time = Time.now()
@@ -284,7 +279,6 @@ class Tshrag:
                 if test.status in Tshrag.RUNSTATUS_PRE_TEST:
                     test.status = RunStatus.PREPARING
             _worker.start()
-            self._workers.append(_worker)
             return _worker
         except Exception as e:
             # TODO: Logging error
@@ -295,6 +289,13 @@ class Tshrag:
 
 
     def refresh(self) -> None:
+        self._workers = [
+            _worker
+            for _worker in self._workers
+            if _worker.is_alive()
+        ]
+        if len(self._workers) >= self._max_workers:
+            return
         with self._lock() as lock:
             _tests = sorted(
                 [
@@ -323,8 +324,9 @@ class Tshrag:
                     and _test.end_time > Time.now()
                     and _occupied.isdisjoint(_test.machine)
                 ):
-                    if self.task(_test.id):
+                    if (_worker := self.task(_test.id)):
                         _occupied.update(_test.machine)
+                        self._workers.append(_worker)
 
 
 
@@ -333,10 +335,12 @@ class Tshrag:
         id: TestId,
         start_time: Optional[Time] = None,
         end_time: Optional[Time] = None,
+        duration: Optional[int] = None
     ) -> bool:
         with self.update_test(id) as test:
             _start_time = test.start_time
             _end_time = test.end_time
+            _duration = test.duration
             if start_time is not None:
                 if test.status not in Tshrag.RUNSTATUS_PRE_TEST:
                     return False
@@ -345,8 +349,13 @@ class Tshrag:
                 if test.status in Tshrag.RUNSTATUS_POST_TEST:
                     return False
                 _end_time = Time(end_time)
+            if duration is not None:
+                if test.status in Tshrag.RUNSTATUS_POST_TEST:
+                    return False
+                _duration = int(duration)
             test.start_time = _start_time
             test.end_time = _end_time
+            test.duration = _duration
             return True
         return False
 
