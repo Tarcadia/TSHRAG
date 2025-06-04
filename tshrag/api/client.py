@@ -17,7 +17,7 @@ from ..core import Identifier, TestId, JobId, DutId
 from ..core import MetricKey, MetricInfo, MetricEntry
 from ..core import MetricDB
 
-from .metric import MetricEntryUpdate
+from .metric import UpdateMetricEntry
 
 
 
@@ -77,7 +77,7 @@ async def abatch_add_metric_entry(
     # TODO: Fix URL
     async with websockets.connect(...) as conn:
         async for entry in entries:
-            request = MetricEntryUpdate(
+            request = UpdateMetricEntry(
                 _key,
                 _dut,
                 [entry]
