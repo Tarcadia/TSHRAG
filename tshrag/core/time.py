@@ -1,4 +1,3 @@
-
 # -*- coding: UTF-8 -*-
 
 from datetime import datetime
@@ -69,6 +68,14 @@ class Time(datetime):
 
     def __repr__(self):
         return f"Time('{self}')"
+
+    def __add__(self, value):
+        if isinstance(value, int):
+            return Time(int(self) + value)
+        return NotImplemented
+
+    def __radd__(self, value):
+        return self.__add__(value)
 
 
 Time.min = Time("min")
