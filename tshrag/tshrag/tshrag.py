@@ -1,4 +1,3 @@
-
 # -*- coding: UTF-8 -*-
 
 
@@ -185,7 +184,10 @@ class Tshrag:
         return _test
 
 
-    def query_test(self, id: TestId) -> Optional[Test]:
+    def query_test(
+        self,
+        id          : TestId,
+    ) -> Optional[Test]:
         try:
             return self._get_test(id)
         except:
@@ -216,7 +218,11 @@ class Tshrag:
         return _job
 
 
-    def query_job(self, test_id: TestId, job_id: JobId) -> Optional[Job]:
+    def query_job(
+        self,
+        test_id     : TestId,
+        job_id      : JobId,
+    ) -> Optional[Job]:
         try:
             return self._get_job(test_id, job_id)
         except:
@@ -234,7 +240,11 @@ class Tshrag:
 
 
     @contextmanager
-    def update_job(self, test_id: TestId, job_id: JobId) -> Generator[Job, None, None]:
+    def update_job(
+        self,
+        test_id     : TestId,
+        job_id      : JobId,
+    ) -> Generator[Job, None, None]:
         with self._job_lock(test_id, job_id) as lock:
             job = self._get_job(test_id, job_id)
             try:
@@ -243,7 +253,10 @@ class Tshrag:
                 self._set_job(test_id, job)
 
 
-    def task(self, id: TestId) -> Thread:
+    def task(
+        self,
+        id          : TestId
+    ) -> Thread:
         if self._test_main is None:
             return None
         def _wrap():
@@ -332,10 +345,10 @@ class Tshrag:
 
     def reschedule_test(
         self,
-        id: TestId,
-        start_time: Optional[Time] = None,
-        end_time: Optional[Time] = None,
-        duration: Optional[int] = None
+        id          : TestId,
+        start_time  : Optional[Time]        = None,
+        end_time    : Optional[Time]        = None,
+        duration    : Optional[int]         = None,
     ) -> bool:
         with self.update_test(id) as test:
             _start_time = test.start_time
@@ -362,7 +375,7 @@ class Tshrag:
 
     def startnow_test(
         self,
-        id: TestId
+        id          : TestId,
     ) -> bool:
         return self.reschedule_test(
             id,
@@ -372,7 +385,7 @@ class Tshrag:
 
     def stopnow_test(
         self,
-        id: TestId
+        id          : TestId
     ) -> bool:
         return self.reschedule_test(
             id,
@@ -383,7 +396,7 @@ class Tshrag:
 
     def cancel_test(
         self,
-        id: TestId
+        id          : TestId,
     ) -> bool:
         with self.update_test(id) as test:
             test.status = RunStatus.CANCELLED

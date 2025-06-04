@@ -1,4 +1,3 @@
-
 # -*- coding: UTF-8 -*-
 
 from typing import List, Set, Union
@@ -67,7 +66,7 @@ class MetricDB:
 
     def query_metric_info(
         self,
-        key: MetricKey
+        key         : MetricKey
     ) -> MetricInfo:
         with sqlite3.connect(self.filename) as conn:
             cursor = conn.cursor()
@@ -84,7 +83,7 @@ class MetricDB:
 
     def update_metric_info(
         self,
-        info: MetricInfo
+        info        : MetricInfo
     ) -> None:
         with sqlite3.connect(self.filename) as conn:
             cursor = conn.cursor()
@@ -97,11 +96,11 @@ class MetricDB:
 
     def query_metric_entry(
         self,
-        key: str,
-        test: TestId = None,
-        dut: Union[DutId, Set[DutId]] = None,
-        start_time: Time = None,
-        end_time: Time = None,
+        key         : str,
+        test        : TestId                = None,
+        dut         : Union[DutId, Set[DutId]] = None,
+        start_time  : Time                  = None,
+        end_time    : Time                  = None,
     ) -> List[MetricEntry]:
         if dut is None:
             dut = set()
@@ -144,10 +143,10 @@ class MetricDB:
 
     def add_metric_entry(
         self,
-        key: MetricKey,
-        entry: MetricEntry,
-        test: TestId = None,
-        dut: Union[DutId, Set[DutId]] = None,
+        key         : MetricKey,
+        entry       : MetricEntry,
+        test        : TestId                = None,
+        dut         : Union[DutId, Set[DutId]] = None,
     ) -> None:
         if test is None:
             test = TestId("")
