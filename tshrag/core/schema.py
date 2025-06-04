@@ -11,8 +11,6 @@ from dataclasses import dataclass, asdict, is_dataclass
 from datetime import datetime
 from pathlib import Path
 
-from .test import RunStatus
-
 
 
 def _constructor(T):
