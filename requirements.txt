@@ -1,5 +1,6 @@
 
 # Core:
+Seqript==1.0.0
 Tshrag-MetircDB
 
 # Functional:
