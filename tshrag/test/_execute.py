@@ -45,16 +45,20 @@ from ..util.consts import ENV_HOST
 from ..util.consts import ENV_TEST_ID
 from ..util.consts import ENV_TEST_MACHINE
 from ..util.consts import ENV_TEST_DEVICE
+from ..util.consts import ENV_TEST_DIR
 from ..util.consts import ENV_JOB_ID
 from ..util.consts import ENV_JOB_MACHINE
 from ..util.consts import ENV_JOB_DEVICE
+from ..util.consts import ENV_JOB_DIR
 
 
 
 def _engine_cmd(
     tshrag          : Tshrag,
-    test_id         : TestId
-) -> Callable[[Union[str, List[str]]], None]:
+    test_id         : TestId,
+    job_machine     : DutId,
+    job_device      : List[DutId],
+) -> Callable[[Seqript, List[str]], None]:
 
     def cmd(
         seqript     : Seqript,
@@ -67,18 +71,22 @@ def _engine_cmd(
             job_prefix = seqript.name,
         )
         job_id = job.id
+        cwd = seqript.cwd.as_posix()
         env = seqript.env | {
             ENV_JOB_ID: job_id,
+            ENV_JOB_MACHINE: job_machine,
+            ENV_JOB_DEVICE: ";".join(job_device),
+            ENV_JOB_DIR: cwd
         }
         cmd = [
             expand_variable(c, env)
             for c in cmd
         ]
         with tshrag.update_job(test_id, job_id) as job:
-            job.machine = seqript.env.get(ENV_TEST_MACHINE)
-            job.device  = seqript.env.get(ENV_TEST_DEVICE).split(";")
+            job.machine = job_machine
+            job.device  = job_device
             job.args    = cmd
-            job.cwd     = seqript.cwd
+            job.cwd     = cwd
             job.env     = env
         
         with tshrag.update_job(test_id, job_id) as job:
@@ -125,11 +133,9 @@ def execute(
                 ENV_TEST_ID: test_id,
                 ENV_TEST_MACHINE: ";".join(test.machine),
                 ENV_TEST_DEVICE: ";".join(test.device),
-                ENV_JOB_MACHINE: machine,
-                ENV_JOB_DEVICE: ";".join(test.device),
             },
             engines = Seqript._DEFAULT_ENGINES | {
-                "cmd"   : _engine_cmd(tshrag, test_id),
+                "cmd"   : _engine_cmd(tshrag, test_id, machine, test.device),
                 "sleep" : seqript.engine.contrib.sleep,
                 "comment": seqript.engine.contrib.comment,
             },

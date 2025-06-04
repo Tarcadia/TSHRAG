@@ -42,9 +42,11 @@ from ..util.consts import ENV_HOST
 from ..util.consts import ENV_TEST_ID
 from ..util.consts import ENV_TEST_MACHINE
 from ..util.consts import ENV_TEST_DEVICE
+from ..util.consts import ENV_TEST_DIR
 from ..util.consts import ENV_JOB_ID
 from ..util.consts import ENV_JOB_MACHINE
 from ..util.consts import ENV_JOB_DEVICE
+from ..util.consts import ENV_JOB_DIR
 
 
 
