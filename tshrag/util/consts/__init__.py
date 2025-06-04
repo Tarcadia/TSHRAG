@@ -31,9 +31,11 @@ from .env import ENV_HOST
 from .env import ENV_TEST_ID
 from .env import ENV_TEST_MACHINE
 from .env import ENV_TEST_DEVICE
+from .env import ENV_TEST_DIR
 from .env import ENV_JOB_ID
 from .env import ENV_JOB_MACHINE
 from .env import ENV_JOB_DEVICE
+from .env import ENV_JOB_DIR
 
 
 __all__ = [
@@ -62,9 +64,11 @@ __all__ = [
     "ENV_TEST_ID",
     "ENV_TEST_MACHINE",
     "ENV_TEST_DEVICE",
+    "ENV_TEST_DIR",
     "ENV_JOB_ID",
     "ENV_JOB_MACHINE",
     "ENV_JOB_DEVICE",
+    "ENV_JOB_DIR",
 ]
 
 
