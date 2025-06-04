@@ -26,11 +26,11 @@ class Run:
     end_time        : Time
 
     def __post_init__(self):
-        if isinstance(self.status, str):
+        if not isinstance(self.status, RunStatus):
             self.status = RunStatus(self.status.upper())
-        if isinstance(self.start_time, str):
+        if not isinstance(self.start_time, Time):
             self.start_time = Time(self.start_time)
-        if isinstance(self.end_time, str):
+        if not isinstance(self.end_time, Time):
             self.end_time = Time(self.end_time)
 
 
