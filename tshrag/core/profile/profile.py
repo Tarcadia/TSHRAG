@@ -10,6 +10,7 @@ from dataclasses import dataclass
 class Profile():
     name            : str
     description     : str
+    duration        : int
     distribution    : dict
     execution       : dict
     report          : dict
