@@ -13,11 +13,13 @@ from functools import lru_cache
 from fastapi import APIRouter
 from fastapi import Query
 from fastapi import WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 
 from ..core import Time
 from ..core import Identifier, TestId, JobId, DutId
 from ..core import MetricKey, MetricInfo, MetricEntry
 from ..core import MetricDB
+from ..core import Schema
 
 from ..tshrag import Tshrag
 
@@ -32,6 +34,28 @@ from ..util.consts import CONCURRENCY
 @lru_cache(maxsize=CONCURRENCY**2)
 def _get_mdb(tshrag: Tshrag, test_id: TestId) -> MetricDB:
     return tshrag.query_test(test_id).get_mdb()
+
+
+def _get_entries(
+    tshrag      : Tshrag,
+    test_id     : str,
+    key         : str,
+    dut         : List[str],
+    start_time  : str,
+    end_time    : str,
+):
+    _test_id = TestId(test_id)
+    _mdb = _get_mdb(tshrag, _test_id)
+    _dut = set(dut)
+    _start_time = start_time and Time(start_time)
+    _end_time = end_time and Time(end_time)
+    return _mdb.query_metric_entry(
+        key         = key,
+        test        = _test_id,
+        dut         = _dut,
+        start_time  = _start_time,
+        end_time    = _end_time,
+    )
 
 
 def _get_nums(entries: List[MetricEntry]) -> List[float]:
@@ -77,6 +101,7 @@ def _get_hist(entries: List[MetricEntry]) -> Dict[str, int]:
         _bin[entry.value] += 1
     return _bin
 
+
 STATISTIC_MAP = {
     "num"   : _get_nums,
     "sum"   : _get_numsum,
@@ -88,8 +113,26 @@ STATISTIC_MAP = {
 
 
 
+_MetricInfo = Schema(MetricInfo)
+_MetricEntry = Schema(MetricEntry)
+
+class RespMetricInfoList(BaseModel):
+    infos: List[_MetricInfo]
+
+class RespMetricInfo(BaseModel):
+    info: _MetricInfo
+
+class RespMetricEntries(BaseModel):
+    entries: List[_MetricEntry]
+
+class RespMetricStatistic(BaseModel):
+    statistic: Any
+
+class RespMessage(BaseModel):
+    message: str
+
 @dataclass
-class MetricEntryUpdate:
+class UpdateMetricEntry:
     key         : MetricKey
     dut         : List[str]             = field(default_factory=list)
     entries     : List[MetricEntry]     = field(default_factory=list)
@@ -106,46 +149,25 @@ class MetricEntryUpdate:
 
 
 
-def _get_entries(
-    tshrag      : Tshrag,
-    test_id     : str,
-    key         : str,
-    dut         : List[str],
-    start_time  : str,
-    end_time    : str,
-):
-    _test_id = TestId(test_id)
-    _key = MetricKey(key)
-    _mdb = _get_mdb(tshrag, _test_id)
-    _dut = set(dut)
-    _start_time = start_time and Time(start_time)
-    _end_time = end_time and Time(end_time)
-    return _mdb.query_metric_entry(
-        key         = _key,
-        test        = _test_id,
-        dut         = _dut,
-        start_time  = _start_time,
-        end_time    = _end_time,
-    )
-
-
-
 def MetricAPI(tshrag: Tshrag):
     router = APIRouter()
 
 
-    @router.get("/metric/{test_id}/infos")
+    @router.get("/metric/{test_id}/infos", response_model=RespMetricInfoList)
     def list_metric_info(
         test_id     : str,
     ):
         _test_id = TestId(test_id)
         _mdb = _get_mdb(tshrag, _test_id)
-        _infos = _mdb.list_metric_info()
-        return [asdict(_info) for _info in _infos]
+        _infos = [
+            _MetricInfo.fromcore(_info)
+            for _info in _mdb.list_metric_info()
+        ]
+        return RespMetricInfoList(infos=_infos)
 
 
-    @router.get("/metric/{test_id}/info")
-    @router.get("/metric/{test_id}/info/{key}")
+    @router.get("/metric/{test_id}/info", response_model=RespMetricInfo)
+    @router.get("/metric/{test_id}/info/{key}", response_model=RespMetricInfo)
     def query_metric_info(
         test_id     : str,
         key         : str,
@@ -154,11 +176,12 @@ def MetricAPI(tshrag: Tshrag):
         _key = str(key)
         _mdb = _get_mdb(tshrag, _test_id)
         _info = _mdb.query_metric_info(_key)
-        return asdict(_info)
+        _info = _MetricInfo.fromcore(_info)
+        return RespMetricInfo(info=_info)
 
 
-    @router.post("/metric/{test_id}/info")
-    @router.post("/metric/{test_id}/info/{key}")
+    @router.post("/metric/{test_id}/info", response_model=RespMessage)
+    @router.post("/metric/{test_id}/info/{key}", response_model=RespMessage)
     def update_metric_info(
         test_id     : str,
         key         : str,
@@ -169,11 +192,11 @@ def MetricAPI(tshrag: Tshrag):
         _mdb = _get_mdb(tshrag, _test_id)
         _info = MetricInfo(key=_key, **info)
         _mdb.update_metric_info(_info)
-        return asdict(_info)
+        return RespMessage(message=f"Metric {_key} info updated.")
 
 
-    @router.get("/metric/{test_id}/entry")
-    @router.get("/metric/{test_id}/entry/{key}")
+    @router.get("/metric/{test_id}/entry", response_model=RespMetricEntries)
+    @router.get("/metric/{test_id}/entry/{key}", response_model=RespMetricEntries)
     def query_metric_entry(
         test_id     : str,
         key         : str,
@@ -181,19 +204,22 @@ def MetricAPI(tshrag: Tshrag):
         start_time  : str                   = Query(None),
         end_time    : str                   = Query(None),
     ):
-        _entries = _get_entries(
-            tshrag,
-            test_id,
-            key,
-            dut,
-            start_time,
-            end_time,
-        )
-        return [asdict(_entry) for _entry in _entries]
+        _entries = [
+            _MetricEntry.fromcore(_entry)
+            for _entry in _get_entries(
+                tshrag,
+                test_id,
+                key,
+                dut,
+                start_time,
+                end_time,
+            )
+        ]
+        return RespMetricEntries(entries=_entries)
 
 
-    @router.get("/metric/{test_id}/{statistic}")
-    @router.get("/metric/{test_id}/{statistic}/{key}")
+    @router.get("/metric/{test_id}/{statistic}", response_model=RespMetricStatistic)
+    @router.get("/metric/{test_id}/{statistic}/{key}", response_model=RespMetricStatistic)
     def query_metric_statistic(
         test_id     : str,
         statistic   : str,
@@ -211,11 +237,11 @@ def MetricAPI(tshrag: Tshrag):
             end_time,
         )
         _statistic = STATISTIC_MAP[statistic](_entries)
-        return _statistic
+        return RespMetricStatistic(statistic=_statistic)
 
 
-    @router.post("/metric/{test_id}/entry")
-    @router.post("/metric/{test_id}/entry/{key}")
+    @router.post("/metric/{test_id}/entry", response_model=RespMessage)
+    @router.post("/metric/{test_id}/entry/{key}", response_model=RespMessage)
     def add_metric_entry(
         test_id     : str,
         key         : str,
@@ -233,7 +259,7 @@ def MetricAPI(tshrag: Tshrag):
             test    = _test_id,
             dut     = _dut,
         )
-        return asdict(_entry)
+        return RespMessage(message=f"Metric {_key} entry added.")
 
 
     return router
@@ -254,7 +280,7 @@ def MetricWsAPI(tshrag: Tshrag):
         await websocket.accept()
         try:
             while True:
-                _update = MetricEntryUpdate(**await websocket.receive_json())
+                _update = UpdateMetricEntry(**await websocket.receive_json())
                 for _entry in _update.entries:
                     _mdb.add_metric_entry(
                         key     = _update.key,
@@ -262,6 +288,7 @@ def MetricWsAPI(tshrag: Tshrag):
                         test    = _test_id,
                         dut     = _update.dut,
                     )
+                    await websocket.send_text(f"Metric {_update.key} entry added.")
         except WebSocketDisconnect:
             # TODO: Handle disconnection
             pass
