@@ -1,4 +1,3 @@
-
 # -*- coding: UTF-8 -*-
 
 
@@ -74,10 +73,10 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @click.option("--machine", "-m",        type=str, multiple=True)
     @click.option("--device", "-d",         type=str, multiple=True)
     def list(
-        start_time: Time,
-        end_time: Time,
-        machine: List[str],
-        device: List[str],
+        start_time  : Time,
+        end_time    : Time,
+        machine     : List[str],
+        device      : List[str],
     ):
         _start_time = Time(start_time)
         _end_time = Time(end_time)
@@ -110,12 +109,12 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @click.option("--device", "-d",         type=str, multiple=True)
     @click.option("--env", "-e",            type=str, multiple=True)
     def create(
-        profile: str,
-        start_time: Time,
-        end_time: Time,
-        machine: List[str],
-        device: List[str],
-        env: List[str],
+        profile     : str,
+        start_time  : Time,
+        end_time    : Time,
+        machine     : List[str],
+        device      : List[str],
+        env         : List[str],
     ):
         with Path(profile).open("r") as f:
             _profile = Profile(**json.load(f))
@@ -143,8 +142,8 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @click.argument("test-id", type=TestId)
     @click.pass_context
     def test(
-        ctx: Context,
-        test_id: TestId,
+        ctx         : Context,
+        test_id     : TestId,
     ):
         ctx.ensure_object(dict)
         ctx.obj["test-id"] = test_id
@@ -153,7 +152,7 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @test.command()
     @click.pass_context
     def detail(
-        ctx: Context,
+        ctx         : Context,
     ):
         test_id = ctx.obj["test-id"]
         test = tshrag.query_test(test_id)
@@ -164,8 +163,8 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @click.argument("job-id", type=JobId)
     @click.pass_context
     def job(
-        ctx: Context,
-        job_id: JobId,
+        ctx         : Context,
+        job_id      : JobId,
     ):
         test_id = ctx.obj["test-id"]
         job = tshrag.query_job(test_id, job_id)
@@ -200,7 +199,7 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @test.command()
     @click.pass_context
     def start(
-        ctx: Context
+        ctx         : Context
     ):
         test_id = ctx.obj["test-id"]
         if(tshrag.startnow_test(test_id)):
@@ -212,7 +211,7 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @test.command()
     @click.pass_context
     def stop(
-        ctx: Context
+        ctx         : Context
     ):
         test_id = ctx.obj["test-id"]
         if(tshrag.stopnow_test(test_id)):
@@ -224,7 +223,7 @@ def TestCLI(tshrag: Tshrag) -> click.Group:
     @test.command()
     @click.pass_context
     def cancel(
-        ctx: Context
+        ctx         : Context
     ):
         test_id = ctx.obj["test-id"]
         if(tshrag.cancel_test(test_id)):

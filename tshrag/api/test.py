@@ -1,4 +1,3 @@
-
 # -*- coding: UTF-8 -*-
 
 
@@ -33,19 +32,19 @@ _Job = Schema(Job)
 _Test = Schema(Test)
 
 class RespTestIdList(BaseModel):
-    tests: List[str]
+    tests           : List[str]
 
 class RespTestDetailList(BaseModel):
-    tests: List[_Test]
+    tests           : List[_Test]
 
 class RespTestDetail(BaseModel):
-    test: _Test
+    test            : _Test
 
 class RespTestJob(BaseModel):
-    job: _Job
+    job             : _Job
 
 class RespMessage(BaseModel):
-    message: str
+    message         : str
 
 
 def _list_tests(
@@ -78,10 +77,10 @@ def TestAPI(tshrag: Tshrag):
     @router.get("/tests/id", response_model=RespTestIdList)
     @router.get("/tests", response_model=RespTestIdList)
     def list_tests_id(
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
-        machine: List[str] = Query([]),
-        device: List[str] = Query([]),
+        start_time  : Optional[str]         = Query(None),
+        end_time    : Optional[str]         = Query(None),
+        machine     : List[str]             = Query([]),
+        device      : List[str]             = Query([]),
     ):
         _tests = [
             str(_test.id)
@@ -98,10 +97,10 @@ def TestAPI(tshrag: Tshrag):
 
     @router.get("/tests/detail", response_model=RespTestDetailList)
     def list_tests_detail(
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
-        machine: List[str] = Query([]),
-        device: List[str] = Query([]),
+        start_time  : Optional[str]         = Query(None),
+        end_time    : Optional[str]         = Query(None),
+        machine     : List[str]             = Query([]),
+        device      : List[str]             = Query([]),
     ):
         _tests = [
             _Test.fromcore(_test)
@@ -118,12 +117,12 @@ def TestAPI(tshrag: Tshrag):
 
     @router.post("/test", response_model=RespTestDetail)
     def create_test(
-        profile: Dict,
-        start_time: Optional[str],
-        end_time: Optional[str],
-        machine: List[str] = Query([]),
-        device: List[str] = Query([]),
-        env: List[str] = Query([]),
+        profile     : Dict,
+        start_time  : Optional[str]         = Query(None),
+        end_time    : Optional[str]         = Query(None),
+        machine     : List[str]             = Query([]),
+        device      : List[str]             = Query([]),
+        env         : List[str]             = Query([]),
     ):
         _profile = Profile(**profile)
         _start_time = Time(start_time) if start_time is not None else Time.min
@@ -149,7 +148,7 @@ def TestAPI(tshrag: Tshrag):
 
     @router.get("/test/{test_id}/detail", response_model=RespTestDetail)
     def get_test_detail(
-        test_id: str,
+        test_id     : str,
     ):
         _test_id = TestId(test_id)
         _test = tshrag.query_test(_test_id)
@@ -159,8 +158,8 @@ def TestAPI(tshrag: Tshrag):
 
     @router.get("/test/{test_id}/job/{job_id}", response_model=RespTestJob)
     def get_test_job(
-        test_id: str,
-        job_id: str,
+        test_id     : str,
+        job_id      : str,
     ):
         _test_id = TestId(test_id)
         _job_id = JobId(job_id)
@@ -188,7 +187,7 @@ def TestAPI(tshrag: Tshrag):
 
     @router.post("/test/{test_id}/start", response_model=RespMessage)
     def start_test(
-        test_id: str,
+        test_id     : str,
     ):
         _test_id = TestId(test_id)
         if(tshrag.startnow_test(_test_id)):
@@ -199,7 +198,7 @@ def TestAPI(tshrag: Tshrag):
 
     @router.post("/test/{test_id}/stop", response_model=RespMessage)
     def stop_test(
-        test_id: str,
+        test_id     : str,
     ):
         _test_id = TestId(test_id)
         if(tshrag.stopnow_test(_test_id)):
@@ -210,7 +209,7 @@ def TestAPI(tshrag: Tshrag):
 
     @router.post("/test/{test_id}/cancel", response_model=RespMessage)
     def cancel_test(
-        test_id: str,
+        test_id     : str,
     ):
         _test_id = TestId(test_id)
         if(tshrag.cancel_test(_test_id)):

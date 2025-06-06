@@ -1,4 +1,3 @@
-
 # -*- coding: UTF-8 -*-
 
 
@@ -37,12 +36,12 @@ def _get_mdb(tshrag: Tshrag, test_id: TestId) -> MetricDB:
 
 
 def _get_entries(
-    tshrag      : Tshrag,
-    test_id     : str,
-    key         : str,
-    dut         : List[str],
-    start_time  : str,
-    end_time    : str,
+    tshrag          : Tshrag,
+    test_id         : str,
+    key             : str,
+    dut             : List[str],
+    start_time      : str,
+    end_time        : str,
 ):
     _test_id = TestId(test_id)
     _mdb = _get_mdb(tshrag, _test_id)
@@ -133,9 +132,9 @@ class RespMessage(BaseModel):
 
 @dataclass
 class UpdateMetricEntry:
-    key         : MetricKey
-    dut         : List[str]             = field(default_factory=list)
-    entries     : List[MetricEntry]     = field(default_factory=list)
+    key             : MetricKey
+    dut             : List[str]             = field(default_factory=list)
+    entries         : List[MetricEntry]     = field(default_factory=list)
 
     def __post_init__(self):
         self.key = MetricKey(self.key)
