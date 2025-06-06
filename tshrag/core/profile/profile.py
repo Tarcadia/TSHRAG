@@ -12,5 +12,5 @@ class Profile():
     duration        : int
     distribution    : dict
     execution       : dict
-    report          : dict
+    reporting       : dict
 
