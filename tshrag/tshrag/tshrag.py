@@ -1,4 +1,3 @@
-
 # -*- coding: UTF-8 -*-
 
 
@@ -16,6 +15,7 @@ from pathlib import Path
 from contextlib import contextmanager
 from dataclasses import asdict
 from threading import Thread
+from socket import gethostname
 
 from portalocker import Lock
 
@@ -25,6 +25,9 @@ from ..core import MetricKey, MetricInfo, MetricEntry
 from ..core import MetricDB
 from ..core import Profile
 from ..core import RunStatus, Run, Job, Test
+from ..core import RuleLevel, Rule, RuleViolation
+from ..core import ViewEntry, ViewSection, ViewItem, View
+from ..core import ReportEntry, ReportSection, ReportItem, Report
 
 from ..util.config import Config
 
@@ -33,10 +36,16 @@ from ..util.consts import PATH_LOCK
 from ..util.consts import TIMEOUT
 from ..util.consts import ENCODING
 from ..util.consts import CONCURRENCY
+from ..util.consts import SERVICE_HOST
+from ..util.consts import SERVICE_PORT
 
 
 class Tshrag:
 
+
+    CALLDISTRIBUTE = TypeVar("CALLDISTRIBUTE", bound=Callable[["Tshrag", TestId], Any])
+    CALLEXECUTE = TypeVar("CALLEXECUTE", bound=Callable[["Tshrag", TestId], Any])
+    CALLREPORT = TypeVar("CALLREPORT", bound=Callable[["Tshrag", TestId, Optional[Time], Optional[Time]], Report])
 
     FILE_LOCK = PATH_LOCK
     FILE_TEST = "status.json"
@@ -62,17 +71,23 @@ class Tshrag:
     def __init__(
         self,
         root        : Path,
+        host        : str                   = None,
         timeout     : int                   = TIMEOUT,
         encoding    : str                   = ENCODING,
         max_workers : int                   = CONCURRENCY,
-        test_main   : Callable[["Tshrag", TestId], None] = None,
-        config      : Config                = None
+        distribute  : CALLDISTRIBUTE        = None,
+        execute     : CALLEXECUTE           = None,
+        report      : CALLREPORT            = None,
+        config      : Config                = None,
     ):
         self._root = Path(root)
+        self._host = host or f"{gethostname()}:{SERVICE_PORT}"
         self._timeout = timeout
         self._encoding = encoding
         self._max_workers = max_workers
-        self._test_main = test_main
+        self._distribute = distribute
+        self._execute = execute
+        self._report = report
 
         if not config is None:
             config.pick_to(Tshrag.__name__, self)
@@ -185,7 +200,10 @@ class Tshrag:
         return _test
 
 
-    def query_test(self, id: TestId) -> Optional[Test]:
+    def query_test(
+        self,
+        id          : TestId,
+    ) -> Optional[Test]:
         try:
             return self._get_test(id)
         except:
@@ -216,7 +234,11 @@ class Tshrag:
         return _job
 
 
-    def query_job(self, test_id: TestId, job_id: JobId) -> Optional[Job]:
+    def query_job(
+        self,
+        test_id     : TestId,
+        job_id      : JobId,
+    ) -> Optional[Job]:
         try:
             return self._get_job(test_id, job_id)
         except:
@@ -234,7 +256,11 @@ class Tshrag:
 
 
     @contextmanager
-    def update_job(self, test_id: TestId, job_id: JobId) -> Generator[Job, None, None]:
+    def update_job(
+        self,
+        test_id     : TestId,
+        job_id      : JobId,
+    ) -> Generator[Job, None, None]:
         with self._job_lock(test_id, job_id) as lock:
             job = self._get_job(test_id, job_id)
             try:
@@ -243,15 +269,35 @@ class Tshrag:
                 self._set_job(test_id, job)
 
 
-    def task(self, id: TestId) -> Thread:
-        if self._test_main is None:
+    def task(
+        self,
+        id          : TestId
+    ) -> Thread:
+        if self._execute is None:
             return None
+        
         def _wrap():
-            with self.update_test(id) as test:
-                test.start_time = Time.now()
             try:
-                _ret = self._test_main(self, id)
-                _status = RunStatus.COMPLETED
+                if self._distribute:
+                    self._distribute(self, id)
+                with self.update_test(id) as test:
+                    test.start_time = Time.now()
+                    if test.status == RunStatus.PREPARING:
+                        test.status = RunStatus.RUNNING
+                    elif test.status in Tshrag.RUNSTATUS_POST_TEST:
+                        # TODO: Handle post-test status
+                        pass
+                    else:
+                        # TODO: Handle status error
+                        pass
+                    _ret = None
+                    _status = test.status
+                if self._execute and _status == RunStatus.RUNNING:
+                    _ret = self._execute(self, id)
+                    _status = RunStatus.COMPLETED
+                else:
+                    _ret = None
+                    _status = RunStatus.COMPLETED
             except KeyboardInterrupt:
                 _ret = None
                 _status = RunStatus.CANCELLED
@@ -329,13 +375,33 @@ class Tshrag:
                         self._workers.append(_worker)
 
 
+    def report_test(
+        self,
+        id          : TestId,
+        start_time  : Optional[Time]        = None,
+        end_time    : Optional[Time]        = None,
+    ) -> Report:
+        if self._report is None:
+            return None
+        try:
+            return self._report(
+                self,
+                id,
+                start_time = start_time,
+                end_time = end_time,
+            )
+        except Exception as e:
+            # TODO: Handle exception
+            return None
+
+
 
     def reschedule_test(
         self,
-        id: TestId,
-        start_time: Optional[Time] = None,
-        end_time: Optional[Time] = None,
-        duration: Optional[int] = None
+        id          : TestId,
+        start_time  : Optional[Time]        = None,
+        end_time    : Optional[Time]        = None,
+        duration    : Optional[int]         = None,
     ) -> bool:
         with self.update_test(id) as test:
             _start_time = test.start_time
@@ -362,7 +428,7 @@ class Tshrag:
 
     def startnow_test(
         self,
-        id: TestId
+        id          : TestId,
     ) -> bool:
         return self.reschedule_test(
             id,
@@ -372,7 +438,7 @@ class Tshrag:
 
     def stopnow_test(
         self,
-        id: TestId
+        id          : TestId
     ) -> bool:
         return self.reschedule_test(
             id,
@@ -383,7 +449,7 @@ class Tshrag:
 
     def cancel_test(
         self,
-        id: TestId
+        id          : TestId,
     ) -> bool:
         with self.update_test(id) as test:
             test.status = RunStatus.CANCELLED
