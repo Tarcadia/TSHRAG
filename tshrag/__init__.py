@@ -4,7 +4,7 @@
 
 from .core import *
 from .tshrag import *
-from .test import *
+from .der import *
 from .api import *
 from .cli import *
 from .util import *
