@@ -119,7 +119,6 @@ def _engine_cmd(
 def execute(
     tshrag          : Tshrag,
     test_id         : str,
-    host            : str,
 ) -> None:
     test = tshrag.query_test(test_id)
     executions = []
@@ -128,7 +127,7 @@ def execute(
             name = f"{test_id}-execution-{machine}",
             cwd = Path() / test_id / "execution" / machine,
             env = test.env | {
-                ENV_HOST: host,
+                ENV_HOST: tshrag._host,
                 ENV_TEST_ID: test_id,
                 ENV_TEST_MACHINE: ";".join(test.machine),
                 ENV_TEST_DEVICE: ";".join(test.device),

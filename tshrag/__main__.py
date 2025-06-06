@@ -21,7 +21,9 @@ from fastapi import FastAPI
 from portalocker import Lock
 
 from .tshrag import Tshrag
-from .test import test_main
+from .der import distribute
+from .der import execute
+from .der import report
 from .cli import TestCLI
 from .cli import MetricCLI
 from .cli import ReportCLI
@@ -46,7 +48,7 @@ from .util.config import CONFIG
 
 
 root = Path(PATH_DOT_TSHRAG)
-tshrag = Tshrag(root, test_main=test_main, config=CONFIG)
+tshrag = Tshrag(root, distribute=distribute, execute=execute, report=report, config=CONFIG)
 daemon_lock = Lock(root / "daemon.lock", timeout=TIMEOUT)
 
 test_api = TestAPI(tshrag)

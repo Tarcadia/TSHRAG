@@ -52,7 +52,6 @@ from ..util.consts import ENV_JOB_DIR
 def distribute(
     tshrag          : Tshrag,
     test_id         : TestId,
-    host            : str,
 ) -> None:
     test = tshrag.query_test(test_id)
     distributions = []
@@ -61,7 +60,7 @@ def distribute(
             name = f"{test_id}-distribution-{machine}",
             cwd = Path() / test_id / "distribution" / machine,
             env = {
-                ENV_HOST: host,
+                ENV_HOST: tshrag._host,
                 ENV_TEST_ID: test_id,
                 ENV_TEST_MACHINE: ";".join(test.machine),
                 ENV_TEST_DEVICE: ";".join(test.device),
